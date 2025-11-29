@@ -8,6 +8,8 @@
 
   <ItemGroup>
     <Compile Include="Domain.fs" />
+    <Compile Include="Services.fs" />
+    <Compile Include="UI.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
 
