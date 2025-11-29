@@ -4,7 +4,7 @@
 ## Get latest from `dotnet new gitignore`
 
 # Generated files
-receipt.json
+receipts.json
 
 # dotenv files
 .env
