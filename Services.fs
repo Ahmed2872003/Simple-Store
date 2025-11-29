@@ -57,7 +57,28 @@ module FileIO =
     type Receipt = { Date: DateTime; Items: CartItem list; Total: decimal }
 
     let saveReceipt (cart: CartItem list) (total: decimal) =
-        let receipt = { Date = DateTime.Now; Items = cart; Total = total }
+        let filePath = "receipts.json"
+        let newReceipt = { Date = DateTime.Now; Items = cart; Total = total }
         let options = JsonSerializerOptions(WriteIndented = true)
-        let json = JsonSerializer.Serialize(receipt, options)
-        File.WriteAllText("receipt.json", json)
+
+        // 1. Read existing receipts (handle case where file doesn't exist yet)
+        let existingReceipts = 
+            if File.Exists(filePath) then
+                let content = File.ReadAllText(filePath)
+                // specific check in case the file exists but is empty
+                if String.IsNullOrWhiteSpace(content) then 
+                    [] 
+                else 
+                    try 
+                        JsonSerializer.Deserialize<Receipt list>(content)
+                    with 
+                    | _ -> [] // Return empty list if file is corrupt
+            else
+                []
+
+        // 2. Append the new receipt to the list
+        let updatedReceipts = existingReceipts @ [newReceipt]
+
+        // 3. Serialize the ENTIRE list back to the file
+        let json = JsonSerializer.Serialize(updatedReceipts, options)
+        File.WriteAllText(filePath, json)
