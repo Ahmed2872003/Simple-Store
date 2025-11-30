@@ -2,6 +2,7 @@
 
 open Domain
 open Services
+open UI
 
 [<EntryPoint>]
 let main argv =
@@ -12,6 +13,6 @@ let main argv =
     
     printfn "Welcome to the F# Simple Store!"
     
-    UI.mainLoop initialState
+    UI.createMainWindow initialState
     
     0
