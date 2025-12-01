@@ -53,7 +53,7 @@ let createMainWindow (initialState: StoreState) =
     // REFRESH FUNCTION
     let refreshUI () =
         listCart.Items.Clear()
-        // FIX: Use .Value instead of !
+
         currentState.Value.Cart |> List.iter (fun item -> 
             listCart.Items.Add(formatCartItem item) |> ignore
         )
@@ -72,7 +72,7 @@ let createMainWindow (initialState: StoreState) =
     listCatalog.FormattingEnabled <- true
 
     // Load initial data
-    // FIX: Use .Value instead of !
+
     currentState.Value.Catalog |> Map.iter (fun _ p -> listCatalog.Items.Add(p) |> ignore)
 
     // --- EVENT HANDLERS ---
@@ -89,10 +89,12 @@ let createMainWindow (initialState: StoreState) =
     btnAdd.Click.Add(fun _ ->
         if listCatalog.SelectedItem <> null then
             let selectedProduct = listCatalog.SelectedItem :?> Product
-            // FIX: Use .Value instead of !
+
             let newCart = Cart.addToCart selectedProduct currentState.Value.Cart
+
+            FileIO.saveCart(newCart)
             
-            // FIX: Use .Value <- ... instead of :=
+
             currentState.Value <- { currentState.Value with Cart = newCart }
             refreshUI()
         else
@@ -104,8 +106,10 @@ let createMainWindow (initialState: StoreState) =
         if listCart.SelectedIndex <> -1 then
             let item = currentState.Value.Cart.[listCart.SelectedIndex]
             let newCart = Cart.removeFromCart item.Product.Id currentState.Value.Cart
+
+            FileIO.saveCart(newCart)
             
-            // FIX: Use .Value <- ... instead of :=
+
             currentState.Value <- { currentState.Value with Cart = newCart }
             refreshUI()
         else
@@ -118,9 +122,9 @@ let createMainWindow (initialState: StoreState) =
         
         if total > 0.0m then
             FileIO.saveReceipt currentState.Value.Cart total
+            FileIO.saveCart([])
             MessageBox.Show(sprintf "Receipt Saved!\nTotal Paid: $%.2M" total) |> ignore
             
-            // FIX: Use .Value <- ... instead of :=
             currentState.Value <- { currentState.Value with Cart = [] }
             refreshUI()
         else

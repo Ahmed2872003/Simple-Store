@@ -52,14 +52,18 @@ module Catalog =
 
     let getProduct id catalog = Map.tryFind id catalog
 
+
 module Cart =
     let addToCart (product: Product) (cart: CartItem list) =
+
         match cart |> List.tryFind (fun item -> item.Product.Id = product.Id) with
         | Some existingItem ->
             let newItem = { existingItem with Quantity = existingItem.Quantity + 1 }
             cart |> List.map (fun item -> if item.Product.Id = product.Id then newItem else item)
         | None ->
             { Product = product; Quantity = 1 } :: cart
+
+
 
     let removeFromCart (productId: int) (cart: CartItem list) =
         match cart |> List.tryFind (fun item -> item.Product.Id = productId) with
@@ -113,3 +117,32 @@ module FileIO =
         // 3. Serialize the ENTIRE list back to the file
         let json = JsonSerializer.Serialize(updatedReceipts, options)
         File.WriteAllText(filePath, json)
+    
+    let loadCart () = 
+        let filePath = "cart.json"
+        try
+            if File.Exists(filePath) then
+                let jsonString = File.ReadAllText(filePath)
+                
+                // Handle case where file exists but is empty
+                if String.IsNullOrWhiteSpace(jsonString) then
+                    []
+                else
+                    JsonSerializer.Deserialize<CartItem list>(jsonString)
+            else
+                [] // File does not exist yet, return empty cart
+        with
+        | ex -> 
+            printfn "Error loading cart: %s" ex.Message
+            [] // Return empty list on error so app doesn't crash
+
+    let saveCart (cart: CartItem list) =
+        let filePath = "cart.json"
+        
+        try
+            let options = JsonSerializerOptions(WriteIndented = true)
+            let jsonString = JsonSerializer.Serialize(cart, options)
+            File.WriteAllText(filePath, jsonString)
+        with
+        | ex -> printfn "Error saving cart: %s" ex.Message
+

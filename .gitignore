@@ -5,6 +5,7 @@
 
 # Generated files
 receipts.json
+cart.json
 
 # dotenv files
 .env
