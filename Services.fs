@@ -91,73 +91,37 @@ module Search =
 module FileIO =
     type Receipt = { Date: DateTime; Items: CartItem list; Total: decimal }
 
-    let saveReceipt (cart: CartItem list) (total: decimal)  filePath =
-        let newReceipt = { Date = DateTime.Now; Items = cart; Total = total }
-        let options = JsonSerializerOptions(WriteIndented = true)
-
-        // 1. Read existing receipts (handle case where file doesn't exist yet)
-        let existingReceipts = 
-            if File.Exists(filePath) then
-                let content = File.ReadAllText(filePath)
-                // specific check in case the file exists but is empty
-                if String.IsNullOrWhiteSpace(content) then 
-                    [] 
-                else 
-                    try 
-                        JsonSerializer.Deserialize<Receipt list>(content)
-                    with 
-                    | _ -> [] // Return empty list if file is corrupt
-            else
-                []
-
-        // 2. Append the new receipt to the list
-        let updatedReceipts = existingReceipts @ [newReceipt]
-
-        // 3. Serialize the ENTIRE list back to the file
-        let json = JsonSerializer.Serialize(updatedReceipts, options)
-        File.WriteAllText(filePath, json)
-
-    let loadReceipts (receiptsPath) : Receipt list =
-
-        if File.Exists(receiptsPath) then
+    let loadData<'T> (filePath: string) : 'T list =
+        if File.Exists(filePath) then
             try
-                let json = File.ReadAllText(receiptsPath)
-                // Handle empty file case
+                let json = File.ReadAllText(filePath)
+                
                 if String.IsNullOrWhiteSpace(json) then 
                     [] 
                 else 
-                    JsonSerializer.Deserialize<Receipt list>(json)
+                    JsonSerializer.Deserialize<'T list>(json)
             with
             | ex -> 
-                // Log error if needed, return empty list on failure to prevent crash
-                System.Diagnostics.Debug.WriteLine(sprintf "Error loading receipts: %s" ex.Message)
+                printfn "Error loading from %s: %s" filePath ex.Message
                 []
         else
             []
-        
-    let loadCart (filePath) = 
 
-        try
-            if File.Exists(filePath) then
-                let jsonString = File.ReadAllText(filePath)
-                
-                // Handle case where file exists but is empty
-                if String.IsNullOrWhiteSpace(jsonString) then
-                    []
-                else
-                    JsonSerializer.Deserialize<CartItem list>(jsonString)
-            else
-                [] // File does not exist yet, return empty cart
-        with
-        | ex -> 
-            printfn "Error loading cart: %s" ex.Message
-            [] // Return empty list on error so app doesn't crash
-
-    let saveCart (cart: CartItem list, filePath) =
+    let saveData<'T> (data: 'T list) (filePath: string) =
         try
             let options = JsonSerializerOptions(WriteIndented = true)
-            let jsonString = JsonSerializer.Serialize(cart, options)
-            File.WriteAllText(filePath, jsonString)
+            let json = JsonSerializer.Serialize(data, options)
+            File.WriteAllText(filePath, json)
         with
-        | ex -> printfn "Error saving cart: %s" ex.Message
+        | ex -> printfn "Error saving to %s: %s" filePath ex.Message
+
+
+    let appendToFile<'T> (newItem: 'T) (filePath: string) =
+        let existingItems = loadData<'T> filePath
+        
+        let updatedList = existingItems @ [newItem]
+        
+        saveData updatedList filePath
+
+
 

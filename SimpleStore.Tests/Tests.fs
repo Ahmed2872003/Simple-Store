@@ -143,17 +143,22 @@ type ServiceTests(output: ITestOutputHelper) =
         this.log "Starting File IO Test..."
 
         let receiptFilePath = "receipts.json"
+        // Clean up previous test runs
+        if File.Exists(receiptFilePath) then File.Delete(receiptFilePath)
 
         let testCart = [{ Product = p3; Quantity = 5 }]
         let testTotal = 25.0m
+
+        let newReceipt = { Date = DateTime.Now; Items = testCart; Total = testTotal }
         
         // Save
         this.log "Saving receipt to disk..."
-        FileIO.saveReceipt testCart testTotal receiptFilePath
+        // FIX: Use 'appendToFile' because 'newReceipt' is a single item, not a list
+        FileIO.appendToFile newReceipt receiptFilePath
 
         // Load
         this.log "Reading receipts from disk..."
-        let loadedReceipts = FileIO.loadReceipts receiptFilePath
+        let loadedReceipts = FileIO.loadData<Receipt> receiptFilePath
 
         loadedReceipts |> should not' (be Empty)
         
@@ -168,10 +173,8 @@ type ServiceTests(output: ITestOutputHelper) =
     member this.``FileIO: Save and Load Cart`` () =
         this.log "Starting File IO Cart Test..."
 
-        // Use a test-specific file so we don't overwrite your real cart
-        let cartFilePath = "cart.json" 
+        let cartFilePath = "cart.json"
         
-        // Ensure fresh start
         if File.Exists(cartFilePath) then File.Delete(cartFilePath)
 
         // Arrange: Create a cart with 2 Laptops and 1 Mouse
@@ -183,18 +186,17 @@ type ServiceTests(output: ITestOutputHelper) =
         // Act 1: Save
         this.log "Saving cart to disk..."
 
-        FileIO.saveCart(testCart, cartFilePath)
+        // FIX: Remove ( ) and , because F# functions are space-separated (Curried)
+        FileIO.saveData testCart cartFilePath
 
         // Act 2: Load
         this.log "Reading cart from disk..."
-        let loadedCart = FileIO.loadCart cartFilePath
+        let loadedCart = FileIO.loadData<CartItem> cartFilePath
 
         // Assert
         loadedCart |> should not' (be Empty)
         loadedCart |> should haveLength 2
         
-        // Verify specific data (Head is usually the last added or first, depending on your list logic)
-        // Let's find the Laptop specifically to be safe
         let laptopEntry = loadedCart |> List.find (fun i -> i.Product.Id = p1.Id)
         laptopEntry.Quantity |> should equal 2
         

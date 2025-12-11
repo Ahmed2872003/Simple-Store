@@ -183,7 +183,7 @@ let createMainWindow (initialState: StoreState) =
     let refreshReceiptsUI () =
         listReceipts.Items.Clear()
         try 
-            let receipts = FileIO.loadReceipts "./receipts.json"
+            let receipts = FileIO.loadData<Receipt> "./receipts.json"
             
             // Filter out any completely null receipts just in case
             let validReceipts = receipts |> List.filter (fun r -> box r <> null)
@@ -223,7 +223,7 @@ let createMainWindow (initialState: StoreState) =
             
             let newCart = Cart.addToCart product currentState.Value.Cart
 
-            FileIO.saveCart(newCart, "./cart.json") 
+            FileIO.saveData newCart "./cart.json"
             currentState.Value <- { currentState.Value with Cart = newCart }
             refreshStoreUI()
         else
@@ -237,7 +237,7 @@ let createMainWindow (initialState: StoreState) =
             if index < currentState.Value.Cart.Length then
                 let item = currentState.Value.Cart.[index]
                 let newCart = Cart.removeFromCart item.Product.Id currentState.Value.Cart
-                FileIO.saveCart(newCart, "./cart.json") 
+                FileIO.saveData newCart "./cart.json" 
                 currentState.Value <- { currentState.Value with Cart = newCart }
                 refreshStoreUI()
         else
@@ -247,8 +247,9 @@ let createMainWindow (initialState: StoreState) =
     btnCheckout.Click.Add(fun _ ->
         let total = Pricing.calculateTotal currentState.Value.Cart
         if total > 0.0m then
-            FileIO.saveReceipt currentState.Value.Cart total "./receipts.json"
-            FileIO.saveCart([], "./cart.json") 
+            let newReceipt = { Date = DateTime.Now ; Items = currentState.Value.Cart ; Total = total}
+            FileIO.appendToFile  newReceipt "./receipts.json"
+            FileIO.saveData [] "./cart.json" 
             MessageBox.Show(sprintf "Payment Successful!\nReceipt generated for $%.2M" total) |> ignore
             
             currentState.Value <- { currentState.Value with Cart = [] }
