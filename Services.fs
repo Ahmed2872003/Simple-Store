@@ -89,8 +89,6 @@ module Search =
         )
 
 module FileIO =
-    type Receipt = { Date: DateTime; Items: CartItem list; Total: decimal }
-
     let loadData<'T> (filePath: string) : 'T list =
         if File.Exists(filePath) then
             try
