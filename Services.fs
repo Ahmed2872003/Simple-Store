@@ -91,8 +91,7 @@ module Search =
 module FileIO =
     type Receipt = { Date: DateTime; Items: CartItem list; Total: decimal }
 
-    let saveReceipt (cart: CartItem list) (total: decimal) =
-        let filePath = "receipts.json"
+    let saveReceipt (cart: CartItem list) (total: decimal)  filePath =
         let newReceipt = { Date = DateTime.Now; Items = cart; Total = total }
         let options = JsonSerializerOptions(WriteIndented = true)
 
@@ -117,9 +116,27 @@ module FileIO =
         // 3. Serialize the ENTIRE list back to the file
         let json = JsonSerializer.Serialize(updatedReceipts, options)
         File.WriteAllText(filePath, json)
-    
-    let loadCart () = 
-        let filePath = "cart.json"
+
+    let loadReceipts (receiptsPath) : Receipt list =
+
+        if File.Exists(receiptsPath) then
+            try
+                let json = File.ReadAllText(receiptsPath)
+                // Handle empty file case
+                if String.IsNullOrWhiteSpace(json) then 
+                    [] 
+                else 
+                    JsonSerializer.Deserialize<Receipt list>(json)
+            with
+            | ex -> 
+                // Log error if needed, return empty list on failure to prevent crash
+                System.Diagnostics.Debug.WriteLine(sprintf "Error loading receipts: %s" ex.Message)
+                []
+        else
+            []
+        
+    let loadCart (filePath) = 
+
         try
             if File.Exists(filePath) then
                 let jsonString = File.ReadAllText(filePath)
@@ -136,9 +153,7 @@ module FileIO =
             printfn "Error loading cart: %s" ex.Message
             [] // Return empty list on error so app doesn't crash
 
-    let saveCart (cart: CartItem list) =
-        let filePath = "cart.json"
-        
+    let saveCart (cart: CartItem list, filePath) =
         try
             let options = JsonSerializerOptions(WriteIndented = true)
             let jsonString = JsonSerializer.Serialize(cart, options)

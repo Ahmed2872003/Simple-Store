@@ -8,7 +8,7 @@ open UI
 let main argv =
     let initialState = {
         Catalog = Catalog.initCatalog()
-        Cart = FileIO.loadCart()
+        Cart = FileIO.loadCart "./cart.json"
     }
     
     printfn "Welcome to the F# Simple Store!"
